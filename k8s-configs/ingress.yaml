@@ -2,8 +2,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: gateway
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
 spec:
   ingressClassName: nginx
+  tls:
+    - secretName: quiz-tls-secret  
   rules:
     - http:
         paths:
@@ -14,35 +18,24 @@ spec:
                 name: service-1
                 port:
                   number: 80
-                  
-          - path: /api/hello
-            pathType: Prefix
+          - path: /health
+            pathType: Exact
             backend:
               service:
                 name: service-1
                 port:
                   number: 80
-
-          - path: /api/aggregate
+          - path: /api/score
             pathType: Prefix
             backend:
               service:
                 name: service-2
                 port:
                   number: 80
-
           - path: /api/stats
             pathType: Prefix
             backend:
               service:
                 name: service-2
-                port:
-                  number: 80
-
-          - path: /health
-            pathType: Prefix
-            backend:
-              service:
-                name: service-1
                 port:
                   number: 80

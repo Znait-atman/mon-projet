@@ -6,5 +6,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 
-EXPOSE 8081
+EXPOSE 5000
 CMD ["python", "src/app.py"]

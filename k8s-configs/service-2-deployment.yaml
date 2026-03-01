@@ -13,28 +13,20 @@ spec:
         app: service-2
     spec:
       serviceAccountName: sa-service-2
-
-    
       volumes:
         - name: tmp
           emptyDir: {}
-
       containers:
         - name: service-2
-          image: znait/service-2:1.2
+          image: znait/service-2:v4
           imagePullPolicy: Always
           ports:
-            - containerPort: 8081
-
+            - containerPort: 5000
           env:
-            - name: SERVICE_1_URL
-              value: "http://service-1"
-
             - name: DB_HOST
               value: "postgres"
             - name: DB_PORT
               value: "5432"
-
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
@@ -50,27 +42,23 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
-
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-
           volumeMounts:
             - name: tmp
               mountPath: /tmp
-
           readinessProbe:
             httpGet:
               path: /health
-              port: 8081
+              port: 5000
             initialDelaySeconds: 5
             periodSeconds: 5
-
           livenessProbe:
             httpGet:
               path: /health
-              port: 8081
+              port: 5000
             initialDelaySeconds: 15
             periodSeconds: 10

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: service-1
-          image: znait/service-1:latest
+          image: znait/service-1:v2
           imagePullPolicy: Always
           ports:
             - containerPort: 5000

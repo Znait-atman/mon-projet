@@ -1,8 +1,10 @@
-from flask import Flask, render_template_string, jsonify
+from flask import Flask, render_template_string, jsonify, request
+import requests
+import os
 
 app = Flask(__name__)
 
-# Le template HTML avec CSS intégré pour un look "Pro"
+# Template du quiz avec CSS et JavaScript
 QUIZ_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="fr">
@@ -24,7 +26,7 @@ QUIZ_TEMPLATE = """
     <div class="container quiz-container">
         <div class="header-cloud text-center">
             <h1>Kubernetes & Cloud Quiz</h1>
-            <p>Projet GKE - IP: 34.163.218.117</p>
+            <p id="ip-display">Chargement de l'adresse...</p>
         </div>
         
         <div id="quiz-box">
@@ -37,11 +39,24 @@ QUIZ_TEMPLATE = """
     </div>
 
     <script>
+        // Récupérer l'IP de l'ingress (affichage)
+        fetch('/api/ingress-ip')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('ip-display').textContent = 'IP: ' + data.ip;
+            });
+
         const questions = [
-            { q: "Quel objet expose notre IP publique sur GKE ?", a: ["Ingress", "Pod", "ConfigMap"], c: 0 },
-            { q: "Pourquoi Postgres crashait au début ?", a: ["Mauvais mot de passe", "Dossier lost+found de Google", "Pas assez de RAM"], c: 1 },
-            { q: "Quel mode GKE gère les serveurs pour nous ?", a: ["Standard", "Autopilot", "Bare Metal"], c: 1 },
-            { q: "Comment isoler la DB en Cyber ?", a: ["Secret", "NetworkPolicy", "Ingress"], c: 1 }
+            { q: "Quel outil permet de conteneuriser une application ?", a: ["Kubernetes", "Docker", "Ingress"], c: 1 },
+            { q: "Quelle ressource Kubernetes expose une application à l'extérieur du cluster ?", a: ["Deployment", "Service", "ConfigMap"], c: 1 },
+            { q: "Quel objet Kubernetes gère le routage HTTP/HTTPS vers les services ?", a: ["Ingress", "LoadBalancer", "Pod"], c: 0 },
+            { q: "Dans GKE, quel mode de cluster gère automatiquement les nœuds ?", a: ["Standard", "Autopilot", "Bare Metal"], c: 1 },
+            { q: "Quelle ressource Kubernetes permet de stocker des informations sensibles (mots de passe) ?", a: ["ConfigMap", "Secret", "PersistentVolume"], c: 1 },
+            { q: "Comment s'appelle le fichier qui décrit la construction d'une image Docker ?", a: ["dockerfile", "Dockerfile", "containerfile"], c: 1 },
+            { q: "Quelle commande kubectl permet de lister les pods ?", a: ["kubectl get pods", "kubectl list pods", "kubectl show pods"], c: 0 },
+            { q: "Qu'est-ce qu'un ServiceAccount dans Kubernetes ?", a: ["Un compte pour les utilisateurs humains", "Une identité pour les applications", "Un type de service"], c: 1 },
+            { q: "À quoi sert une NetworkPolicy ?", a: ["À limiter le trafic réseau entre pods", "À exposer un service", "À stocker des données"], c: 0 },
+            { q: "Quelle sonde Kubernetes vérifie si un conteneur est prêt à recevoir du trafic ?", a: ["livenessProbe", "readinessProbe", "startupProbe"], c: 1 }
         ];
 
         let currentQ = 0;
@@ -67,9 +82,36 @@ QUIZ_TEMPLATE = """
             if(currentQ < questions.length) {
                 loadQuestion();
             } else {
-                document.getElementById('quiz-box').innerHTML = `<h2>Quiz terminé !</h2><p>Votre score final : ${score}/${questions.length}</p><button class='btn btn-primary' onclick='location.reload()'>Recommencer</button>`;
+                // Fin du quiz
+                let playerName = prompt("Bravo ! Votre score est " + score + "/" + questions.length + ". Entrez votre nom pour enregistrer votre score :");
+                if(playerName) {
+                    fetch('/api/score', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({player: playerName, score: score})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.status === 'ok') alert('Score enregistré !');
+                        else alert('Erreur : ' + data.message);
+                    });
+                }
+                // Afficher le score final et bouton stats
+                document.getElementById('quiz-box').innerHTML = `
+                    <h2>Quiz terminé !</h2>
+                    <p>Votre score : ${score}/${questions.length}</p>
+                    <button class="btn btn-primary" onclick="showStats()">Voir les statistiques</button>
+                `;
             }
             document.getElementById('score-box').textContent = `Score: ${score}`;
+        }
+
+        function showStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    alert(`Parties jouées : ${data.total_games}\\nScore moyen : ${data.average_score.toFixed(2)}\\nMeilleur score : ${data.max_score}`);
+                });
         }
 
         loadQuestion();
@@ -85,6 +127,10 @@ def index():
 @app.route('/health')
 def health():
     return jsonify({"status": "up"}), 200
+
+@app.route('/api/ingress-ip')
+def ingress_ip():
+    return jsonify({"ip": request.host.split(':')[0]})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

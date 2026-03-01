@@ -1,11 +1,8 @@
-from flask import Flask, jsonify
-import os
-import requests
+from flask import Flask, jsonify, request
 import psycopg
+import os
 
 app = Flask(__name__)
-
-SERVICE_1_URL = os.getenv("SERVICE_1_URL", "http://service-1")
 
 DB_HOST = os.getenv("DB_HOST", "postgres")
 DB_PORT = int(os.getenv("DB_PORT", "5432"))
@@ -27,10 +24,11 @@ def init_db():
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS requests_log (
+                CREATE TABLE IF NOT EXISTS scores (
                     id SERIAL PRIMARY KEY,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    service1_message TEXT NOT NULL
+                    player VARCHAR(100) NOT NULL,
+                    score INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT NOW()
                 );
             """)
         conn.commit()
@@ -43,31 +41,28 @@ def health():
     except Exception as e:
         return jsonify(status="degraded", db="error", error=str(e)), 500
 
-@app.get("/api/aggregate")
-def aggregate():
-    r = requests.get(f"{SERVICE_1_URL}/api/hello", timeout=3)
-    msg = r.json().get("message", "no-message")
-
+@app.post("/api/score")
+def add_score():
+    data = request.get_json()
+    player = data.get('player')
+    score = data.get('score')
+    if not player or score is None:
+        return jsonify({"error": "player and score required"}), 400
     init_db()
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO requests_log(service1_message) VALUES (%s)", (msg,))
+            cur.execute("INSERT INTO scores (player, score) VALUES (%s, %s)", (player, score))
         conn.commit()
-
-    return jsonify(
-        service="service-2",
-        called_service_1=True,
-        service_1_response=r.json()
-    )
+    return jsonify({"status": "ok"})
 
 @app.get("/api/stats")
 def stats():
     init_db()
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM requests_log;")
-            count = cur.fetchone()[0]
-    return jsonify(total_aggregate_calls=count)
+            cur.execute("SELECT COUNT(*), COALESCE(AVG(score),0), COALESCE(MAX(score),0) FROM scores;")
+            count, avg, max_score = cur.fetchone()
+    return jsonify(total_games=count, average_score=float(avg), max_score=max_score)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8081)
+    app.run(host="0.0.0.0", port=5000)
