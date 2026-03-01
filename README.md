@@ -75,7 +75,11 @@ kubectl get ingress gateway
 
 ## Accès Direct (Internet) :
 
-https://<34.163.218.117> (Certificat auto-signé)
+http://34.163.218.117
+
+ou:
+
+https://34.163.218.117 (Certificat auto-signé)
 
 ## Accès Local (Proxy) :
 
