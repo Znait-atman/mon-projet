@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gateway
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: service-1
+                port:
+                  number: 80
+                  
+          - path: /api/hello
+            pathType: Prefix
+            backend:
+              service:
+                name: service-1
+                port:
+                  number: 80
+
+          - path: /api/aggregate
+            pathType: Prefix
+            backend:
+              service:
+                name: service-2
+                port:
+                  number: 80
+
+          - path: /api/stats
+            pathType: Prefix
+            backend:
+              service:
+                name: service-2
+                port:
+                  number: 80
+
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: service-1
+                port:
+                  number: 80

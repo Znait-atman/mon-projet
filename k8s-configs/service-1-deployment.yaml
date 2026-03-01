@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-1
+  template:
+    metadata:
+      labels:
+        app: service-1
+    spec:
+      containers:
+        - name: service-1
+          image: znait/service-1:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
