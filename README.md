@@ -74,7 +74,7 @@ L’application est décomposée en plusieurs composants clés :
 
 ---
 
-# Sécurité (focus cybersécurité)
+# Sécurité 
 
 Le déploiement intègre plusieurs couches de sécurité :
 
@@ -87,11 +87,14 @@ Le déploiement intègre plusieurs couches de sécurité :
 
 # Guide de déploiement
 
-## Étape 1 : Préparation des images Docker
+```
+
+## Etape 1: Préparation des images Docker
 
 Construire et envoyer les images vers Docker Hub afin qu’elles puissent être récupérées par le cluster.
 
 ### Service 1
+
 ```bash
 cd service-1
 docker build -t znait/service-1:v2 .
