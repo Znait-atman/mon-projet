@@ -140,4 +140,3 @@ kubectl port-forward service/service-1 5000:80
 
 Puis ouvrir dans un navigateur :
 http://localhost:5000
-docker push znait/service-2:v4
